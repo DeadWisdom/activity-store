@@ -5,6 +5,7 @@ import asyncio
 import functools
 import os
 from datetime import datetime
+import datetime as dt
 from typing import Any, Callable, Dict, Optional, TypeVar, Union, cast
 
 from .cache import InMemoryCacheBackend
@@ -343,7 +344,7 @@ class ActivityStore:
             "id": object_id,
             "type": "Tombstone",
             "formerType": object_type,
-            "deleted": datetime.utcnow().isoformat() + "Z"
+            "deleted": datetime.now(dt.UTC).isoformat() + "Z"
         }
         
         # Add context if it exists in the original
@@ -384,7 +385,7 @@ class ActivityStore:
         
         logger.info(
             f"Executed query",
-            metadata={"query": query.dict(), "result_count": results.get("totalItems", 0)}
+            metadata={"query": query.model_dump(), "result_count": results.get("totalItems", 0)}
         )
         
         return results

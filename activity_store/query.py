@@ -3,7 +3,7 @@
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 
 class Query(BaseModel):
@@ -49,6 +49,14 @@ class Query(BaseModel):
         description="Object type(s) to match"
     )
     
+    @field_validator('size')
+    @classmethod
+    def validate_size(cls, value: int) -> int:
+        """Validate that size is a positive integer."""
+        if value <= 0:
+            raise ValueError("size must be a positive integer")
+        return value
+    
     def to_dict(self) -> Dict[str, Any]:
         """
         Convert query to a dictionary representation.
@@ -58,4 +66,4 @@ class Query(BaseModel):
         Returns:
             Dictionary with query parameters
         """
-        return {k: v for k, v in self.dict().items() if v is not None}
+        return {k: v for k, v in self.model_dump().items() if v is not None}
