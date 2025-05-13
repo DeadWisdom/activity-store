@@ -1,0 +1,11 @@
+[project]
+name = "activity-store"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "hishel>=0.1.2",
+    "orjson>=3.10.18",
+    "pyld>=2.0.4",
+]
