@@ -1,11 +1,9 @@
-import asyncio
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock, create_autospec
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from activity_store.store import ActivityStore, SyncActivityStore
 from activity_store.backends.memory import InMemoryStorageBackend
 from activity_store.cache.memory import InMemoryCacheBackend
-from activity_store.exceptions import ObjectNotFound
 from activity_store.query import Query
 from tests.utils import create_test_ld_object
 

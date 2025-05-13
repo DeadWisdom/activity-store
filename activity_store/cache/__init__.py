@@ -3,4 +3,9 @@
 
 from .memory import InMemoryCacheBackend
 
-__all__ = ["InMemoryCacheBackend"]
+try:
+    from .redis import RedisCacheBackend
+    __all__ = ["InMemoryCacheBackend", "RedisCacheBackend"]
+except ImportError:
+    # Redis dependencies not installed
+    __all__ = ["InMemoryCacheBackend"]

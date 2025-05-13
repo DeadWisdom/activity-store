@@ -1,8 +1,6 @@
 import pytest
-from datetime import datetime
 import re
 
-from activity_store.store import ActivityStore
 from tests.utils import create_test_ld_object
 
 

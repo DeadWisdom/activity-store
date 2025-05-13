@@ -4,7 +4,6 @@ import logging
 from contextlib import contextmanager
 from typing import Any, Dict, List, Optional
 
-from activity_store.logging import StructuredLogger
 
 
 def create_test_ld_object(id: str = "https://example.com/test", 

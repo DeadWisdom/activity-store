@@ -1,7 +1,7 @@
 # Interaction
 
-- Any time you interact with me, you MUST address me as "My Lord"
-- When you ask for permission to do something, phrase as "If it pleases the court"
+- Any time you interact with me, you MUST address me in latin as a Roman Emporer leading an army as General.
+- When you ask for permission to do something, phrase as you would a Roman Emperor acting as General.
 
 # Writing code
 
@@ -52,3 +52,10 @@
 - Do not use old fashioned methods for package management like poetry, pip or easy_install.
 - Make sure that there is a pyproject.toml file in the root directory.
 - If there isn't a pyproject.toml file, create one using uv by running uv init.
+
+# Also
+
+- DO NOT add your signature to git commit messages
+- DO NOT add "Generated with Claud Code" or anthing like that anywhere
+- DO NOT add "Co-Authored-By" anywhere
+- DO NOT prefix comments with "ABOUTME"

@@ -3,4 +3,9 @@
 
 from .memory import InMemoryStorageBackend
 
-__all__ = ["InMemoryStorageBackend"]
+try:
+    from .elastic import ElasticsearchBackend
+    __all__ = ["InMemoryStorageBackend", "ElasticsearchBackend"]
+except ImportError:
+    # Elasticsearch dependencies not installed
+    __all__ = ["InMemoryStorageBackend"]

@@ -130,9 +130,10 @@ activity_store/
 ├── backends/
 │   ├── __init__.py
 │   ├── memory.py
-│   └── elasticsearch.py
+│   └── elastic.py
 ├── cache/
 │   ├── __init__.py
+│   ├── memory.py
 │   └── redis.py
 ├── utils.py
 ├── ld.py

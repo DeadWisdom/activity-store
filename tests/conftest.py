@@ -1,4 +1,3 @@
-import asyncio
 import pytest
 
 from activity_store import ActivityStore

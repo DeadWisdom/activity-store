@@ -1,6 +1,4 @@
-import datetime
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 
 from activity_store.ld import (
     expand_property, compact_property, normalize, any_none, with_prefixes
@@ -246,8 +244,8 @@ class TestLDFunctions:
         
         # Call normalize with custom context
         doc = {"id": "test", "type": "Note"}
-        result = normalize(doc, context=custom_context)
-        
+        normalize(doc, context=custom_context)
+
         # Verify correct context passed
         args = mock_compact.call_args[0]
         assert args[1] == custom_context

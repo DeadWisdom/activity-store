@@ -1,7 +1,4 @@
-import io
 import logging
-import pytest
-from unittest.mock import patch, MagicMock
 
 from activity_store.logging import StructuredLogger, get_logger, with_logging
 from tests.utils import capture_logs, get_metadata_from_logs

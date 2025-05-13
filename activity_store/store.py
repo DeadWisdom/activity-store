@@ -6,7 +6,7 @@ import functools
 import os
 from datetime import datetime
 import datetime as dt
-from typing import Any, Callable, Dict, Optional, TypeVar, Union, cast
+from typing import Any, Callable, Dict, Optional, TypeVar, Union
 
 from .cache import InMemoryCacheBackend
 from .backends import InMemoryStorageBackend
@@ -384,7 +384,7 @@ class ActivityStore:
         results = await self.backend.query(query)
         
         logger.info(
-            f"Executed query",
+            "Executed query",
             metadata={"query": query.model_dump(), "result_count": results.get("totalItems", 0)}
         )
         
