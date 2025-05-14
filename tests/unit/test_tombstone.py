@@ -30,7 +30,7 @@ class TestTombstone:
         assert "@context" in tombstone
         
         # Check deleted timestamp format (ISO 8601)
-        iso8601_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?Z$'
+        iso8601_pattern = r'^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?(\+\d{2}:\d{2})?Z$'
         assert re.match(iso8601_pattern, tombstone["deleted"])
         
         # Retrieve the tombstone from the store

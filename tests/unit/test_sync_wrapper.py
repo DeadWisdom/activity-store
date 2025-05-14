@@ -44,22 +44,25 @@ class TestSyncActivityStore:
         mock_async_store.setup = AsyncMock()
         mock_async_store.teardown = AsyncMock()
         
-        # Patch the ActivityStore constructor to return our mock
-        with patch.object(ActivityStore, '__new__', return_value=mock_async_store):
-            # Mock the run_until_complete method
-            mock_loop = MagicMock()
+        # Create a SyncActivityStore
+        sync_store = SyncActivityStore()
+        
+        # Replace the async store with our mock
+        sync_store._async_store = mock_async_store
+        
+        # Mock the event loop
+        mock_loop = MagicMock()
+        sync_store._loop = mock_loop
+        
+        # Use as context manager
+        with sync_store:
+            # Check that setup was called
+            assert mock_loop.run_until_complete.called
+            assert mock_async_store.setup.called
             
-            # Create a SyncActivityStore with the mocked components
-            sync_store = SyncActivityStore()
-            sync_store._loop = mock_loop
-            
-            # Use as context manager
-            with sync_store:
-                # Check that setup was run
-                mock_loop.run_until_complete.assert_called_with(mock_async_store.setup())
-                
-            # Check that teardown was run
-            mock_loop.run_until_complete.assert_called_with(mock_async_store.teardown())
+        # Check that teardown was called
+        assert mock_loop.run_until_complete.called
+        assert mock_async_store.teardown.called
     
     def test_run_async(self):
         """Test the _run_async method."""

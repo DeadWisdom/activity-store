@@ -76,10 +76,14 @@ This document outlines a step-by-step set of developer prompts to be given to a 
 > - Synchronous wrapper tests
 > - Public API export tests
 
-### 14. Implement a Redis Cache Backend
+### 14. Implement a Redis Cache Backend ✅
 
 > Implement `RedisCacheBackend` in `cache/redis.py`. Be sure to create integration tests before implementation.
 
-### 15. Implement a Elasticsearch Cache Backend
+### 15. Implement an Elasticsearch Storage Backend ✅
 
-> Implement `ElasticCacheBackend` in `cache/elastic.py`. Be sure to create integration tests before implementation.
+> Implement `ElasticsearchBackend` in `backends/elastic.py`. Be sure to create integration tests before implementation.
+
+### 16. Ensure Persistence ✅
+
+> Ensure the Elasticsearch Backend and the Redis Cache Backends persist across restarts of the application.

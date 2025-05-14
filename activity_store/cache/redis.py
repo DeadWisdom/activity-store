@@ -59,23 +59,18 @@ class RedisCacheBackend(CacheBackend):
             )
     
     async def teardown(self) -> None:
-        """Close the Redis client connection and clean up."""
+        """
+        Close the Redis client connection.
+        
+        Unlike previous implementation, this does NOT delete keys to ensure persistence
+        across application restarts.
+        """
         if self._initialized and self._client is not None:
             try:
-                # Clean up namespace keys
-                pattern = f"{self.namespace}:*"
-                cursor = 0
-                while True:
-                    cursor, keys = await self._client.scan(cursor, pattern, 100)
-                    if keys:
-                        await self._client.delete(*keys)
-                    if cursor == 0:
-                        break
-                
                 # Close the client using aclose() (recommended over close())
                 await self._client.aclose()
                 logger.info(
-                    f"Disconnected from Redis and cleaned up namespace {self.namespace}",
+                    f"Disconnected from Redis, namespace {self.namespace}",
                     metadata={"namespace": self.namespace}
                 )
             except Exception as e:
@@ -86,6 +81,40 @@ class RedisCacheBackend(CacheBackend):
             finally:
                 self._initialized = False
                 self._client = None
+                
+    async def cleanup_namespace(self) -> None:
+        """
+        Clean up all keys in the current namespace.
+        
+        This is a separate method from teardown to allow explicit cleanup
+        when needed, without affecting persistence by default.
+        """
+        if not self._initialized:
+            await self.setup()
+            
+        try:
+            # Clean up namespace keys
+            pattern = f"{self.namespace}:*"
+            cursor = 0
+            deleted_keys = 0
+            
+            while True:
+                cursor, keys = await self._client.scan(cursor, pattern, 100)
+                if keys:
+                    await self._client.delete(*keys)
+                    deleted_keys += len(keys)
+                if cursor == 0:
+                    break
+            
+            logger.info(
+                f"Cleaned up namespace {self.namespace}",
+                metadata={"namespace": self.namespace, "deleted_keys": deleted_keys}
+            )
+        except Exception as e:
+            logger.error(
+                "Error during Redis namespace cleanup",
+                metadata={"error": str(e), "namespace": self.namespace}
+            )
     
     def _get_key(self, key: str) -> str:
         """

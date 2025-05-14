@@ -64,13 +64,15 @@ async def redis_cache(redis_url: str) -> Optional[CacheBackend]:
         # Create the cache backend with 0.5s TTL for faster testing
         cache = RedisCacheBackend(redis_url=redis_url, namespace="test")
         
-        # Clear the test namespace before starting
+        # Set up the cache and clear the test namespace before starting
         await cache.setup()
+        await cache.cleanup_namespace()
         
         # Return the initialized cache
         yield cache
         
-        # Cleanup after the tests
+        # Clean up after the tests
+        await cache.cleanup_namespace()
         await cache.teardown()
     except Exception as e:
         pytest.skip(f"Failed to connect to Redis: {e}")
@@ -194,18 +196,28 @@ async def test_redis_cache_setup_teardown(redis_url: str):
         # Add a value
         await cache.add("lifecycle-test", {"test": "value"})
         
-        # Call teardown
+        # Just close the connection without cleaning up (teardown should no longer clean up)
         await cache.teardown()
         
         # Create a new instance
         new_cache = RedisCacheBackend(redis_url=redis_url, namespace="test-lifecycle")
         await new_cache.setup()
         
-        # The value should be gone if teardown cleaned up
-        assert await new_cache.get("lifecycle-test") is None
+        # The value should still be there (persistence)
+        assert await new_cache.get("lifecycle-test") is not None
         
-        # Clean up
-        await new_cache.teardown()
+        # Now explicitly clean up the namespace
+        await new_cache.cleanup_namespace()
+        
+        # Create a third instance
+        third_cache = RedisCacheBackend(redis_url=redis_url, namespace="test-lifecycle")
+        await third_cache.setup()
+        
+        # The value should be gone after cleanup
+        assert await third_cache.get("lifecycle-test") is None
+        
+        # Close the connection
+        await third_cache.teardown()
     except Exception as e:
         pytest.skip(f"Failed to connect to Redis: {e}")
 

@@ -167,6 +167,9 @@ async def es_backend(es_url: str, test_index_prefix: str) -> Optional[StorageBac
         print("Setting up backend (creating indices)...")
         try:
             await backend.setup()
+            # Clean up any existing data for tests
+            await backend.cleanup_indices()
+            await backend.setup()
             print("Backend setup completed successfully")
         except Exception as setup_error:
             print(f"Error setting up backend: {setup_error}")
@@ -180,6 +183,7 @@ async def es_backend(es_url: str, test_index_prefix: str) -> Optional[StorageBac
         
         # Cleanup after the tests
         print("Cleaning up (tearing down backend)...")
+        await backend.cleanup_indices()
         await backend.teardown()
         print("Backend teardown completed")
     except Exception as e:
@@ -531,13 +535,16 @@ async def test_es_setup_teardown(es_url: str, test_index_prefix: str):
         result = await backend.get(obj["id"])
         assert result is not None
 
-        # Tear down should remove indices
+        # Just close client connection without removing indices (persistence)
         await backend.teardown()
 
         # Create a new backend with the same prefix (reusing the same client or URL)
         if es_url is None:
             new_backend = ElasticsearchBackend(
-                client=client,
+                client=AsyncElasticsearch(
+                    cloud_id=cloud_id,
+                    api_key=password,
+                ),
                 index_prefix=namespace,
                 refresh_on_write=True
             )
@@ -546,13 +553,35 @@ async def test_es_setup_teardown(es_url: str, test_index_prefix: str):
 
         await new_backend.setup()
 
-        # The object should be gone if teardown worked
+        # The object should still be there (persistence)
+        result = await new_backend.get(obj["id"])
+        assert result is not None
+        
+        # Now explicitly clean up the indices
+        await new_backend.cleanup_indices()
+        
+        # Create a third instance with the same prefix
+        if es_url is None:
+            third_backend = ElasticsearchBackend(
+                client=AsyncElasticsearch(
+                    cloud_id=cloud_id,
+                    api_key=password,
+                ),
+                index_prefix=namespace,
+                refresh_on_write=True
+            )
+        else:
+            third_backend = ElasticsearchBackend(es_url=es_url, index_prefix=test_index_prefix)
+            
+        await third_backend.setup()
+            
+        # The object should be gone after cleanup
         from activity_store.exceptions import ObjectNotFound
         with pytest.raises(ObjectNotFound):
-            await new_backend.get(obj["id"])
+            await third_backend.get(obj["id"])
 
         # Clean up
-        await new_backend.teardown()
+        await third_backend.teardown()
 
         # Close the client if we created it
         if es_url is None:

@@ -100,19 +100,18 @@ class ElasticsearchBackend(StorageBackend):
             )
     
     async def teardown(self) -> None:
-        """Close the Elasticsearch client and clean up."""
+        """
+        Close the Elasticsearch client connection.
+        
+        Unlike previous implementation, this does NOT delete indices to ensure persistence
+        across application restarts.
+        """
         if self._initialized and self._client is not None:
             try:
-                # Delete indices
-                await self._client.indices.delete(
-                    index=[self.main_index, self.collection_index],
-                    ignore=[404]  # Ignore if indices don't exist
-                )
-                
-                # Close the client
+                # Only close the client without deleting indices
                 await self._client.close()
                 logger.info(
-                    "Disconnected from Elasticsearch and deleted indices",
+                    "Disconnected from Elasticsearch",
                     metadata={"indices": [self.main_index, self.collection_index]}
                 )
             except Exception as e:
@@ -123,6 +122,36 @@ class ElasticsearchBackend(StorageBackend):
             finally:
                 self._initialized = False
                 self._client = None
+                
+    async def cleanup_indices(self) -> None:
+        """
+        Delete the indices created by this backend.
+        
+        This is a separate method from teardown to allow explicit cleanup
+        when needed, without affecting persistence by default.
+        """
+        if not self._initialized:
+            await self.setup()
+            
+        try:
+            # Delete indices
+            result = await self._client.indices.delete(
+                index=[self.main_index, self.collection_index],
+                ignore=[404]  # Ignore if indices don't exist
+            )
+            
+            logger.info(
+                "Deleted Elasticsearch indices",
+                metadata={
+                    "indices": [self.main_index, self.collection_index],
+                    "result": result
+                }
+            )
+        except Exception as e:
+            logger.error(
+                "Error during Elasticsearch indices cleanup",
+                metadata={"error": str(e), "indices": [self.main_index, self.collection_index]}
+            )
     
     async def _create_indices(self) -> None:
         """Create the required Elasticsearch indices if they don't exist."""

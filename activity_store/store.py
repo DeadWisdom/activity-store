@@ -160,15 +160,49 @@ class ActivityStore:
         Create a backend based on configuration.
         
         Respects the ACTIVITY_STORE_BACKEND environment variable.
-        Currently only supports 'memory' backend.
+        Supports:
+        - 'memory': In-memory backend (default)
+        - 'elasticsearch': Elasticsearch backend
         
         Returns:
             A StorageBackend instance
         """
         backend_type = os.environ.get("ACTIVITY_STORE_BACKEND", "memory")
+        namespace = os.environ.get("ACTIVITY_STORE_NAMESPACE", DEFAULT_NAMESPACE)
         
         if backend_type == "memory":
             return InMemoryStorageBackend()
+        elif backend_type == "elasticsearch":
+            try:
+                from .backends.elastic import ElasticsearchBackend
+                
+                # Check for cloud configuration
+                cloud_id = os.environ.get("ELASTICSEARCH_CLOUD_ID")
+                password = os.environ.get("ELASTICSEARCH_PASSWORD")
+                
+                if cloud_id and password:
+                    from elasticsearch import AsyncElasticsearch
+                    client = AsyncElasticsearch(
+                        cloud_id=cloud_id,
+                        api_key=password,
+                    )
+                    return ElasticsearchBackend(
+                        client=client,
+                        index_prefix=namespace
+                    )
+                else:
+                    # Use standard URL connection
+                    es_url = os.environ.get("ES_URL", "http://localhost:9200")
+                    return ElasticsearchBackend(
+                        es_url=es_url,
+                        index_prefix=namespace
+                    )
+            except ImportError:
+                logger.error(
+                    "Failed to create Elasticsearch backend, missing dependencies. Install with `pip install activity-store[es]`",
+                    metadata={"requested_backend": backend_type}
+                )
+                return InMemoryStorageBackend()
         else:
             # Default to in-memory if backend type not recognized
             logger.warning(
@@ -183,15 +217,32 @@ class ActivityStore:
         Create a cache based on configuration.
         
         Respects the ACTIVITY_STORE_CACHE environment variable.
-        Currently only supports 'memory' cache.
+        Supports:
+        - 'memory': In-memory cache (default)
+        - 'redis': Redis cache
         
         Returns:
             A CacheBackend instance
         """
         cache_type = os.environ.get("ACTIVITY_STORE_CACHE", "memory")
+        namespace = os.environ.get("ACTIVITY_STORE_NAMESPACE", DEFAULT_NAMESPACE)
         
         if cache_type == "memory":
             return InMemoryCacheBackend()
+        elif cache_type == "redis":
+            try:
+                from .cache.redis import RedisCacheBackend
+                redis_url = os.environ.get("REDIS_URL", "redis://localhost:6379/0")
+                return RedisCacheBackend(
+                    redis_url=redis_url,
+                    namespace=namespace
+                )
+            except ImportError:
+                logger.error(
+                    "Failed to create Redis cache, missing dependencies. Install with `pip install activity-store[redis]`",
+                    metadata={"requested_cache": cache_type}
+                )
+                return InMemoryCacheBackend()
         else:
             # Default to in-memory if cache type not recognized
             logger.warning(
