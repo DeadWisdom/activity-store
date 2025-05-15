@@ -1,5 +1,5 @@
-# ABOUTME: Elasticsearch backend for storing and querying Activity Streams objects.
-# ABOUTME: Implements the StorageBackend interface with Elasticsearch as the storage engine.
+# Elasticsearch backend for storing and querying Activity Streams objects.
+# Implements the StorageBackend interface with Elasticsearch as the storage engine.
 
 import copy
 import hashlib

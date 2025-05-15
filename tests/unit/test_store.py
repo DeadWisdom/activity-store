@@ -381,7 +381,7 @@ class TestActivityStore:
         collection = "notes"
         await activity_store.add_to_collection(sample_object, collection)
         
-        # Query by type
+        # Query by type with Query object
         results = await activity_store.query(Query(type="Note"))
         assert results["type"] == "Collection"
         assert results["totalItems"] >= 1
@@ -394,7 +394,7 @@ class TestActivityStore:
                 break
         assert found is True
         
-        # Query by collection
+        # Query by collection with Query object
         results = await activity_store.query(Query(collection=collection))
         assert results["type"] == "Collection"
         assert results["totalItems"] >= 1
@@ -404,6 +404,49 @@ class TestActivityStore:
             "type": "Note", 
             "collection": collection
         })
+        assert results["type"] == "Collection"
+        assert results["totalItems"] >= 1
+    
+    @pytest.mark.asyncio
+    async def test_query_method_kwargs(self, activity_store, sample_object):
+        """Test the query method using keyword arguments."""
+        # Store the object first
+        await activity_store.store(sample_object)
+        
+        # Add to collection
+        collection = "notes"
+        await activity_store.add_to_collection(sample_object, collection)
+        
+        # Query using keyword arguments
+        results = await activity_store.query(type="Note")
+        assert results["type"] == "Collection"
+        assert results["totalItems"] >= 1
+        
+        # Query with multiple keyword arguments
+        results = await activity_store.query(type="Note", collection=collection)
+        assert results["type"] == "Collection"
+        assert results["totalItems"] >= 1
+        
+        # Query with empty call (should return all objects)
+        results = await activity_store.query()
+        assert results["type"] == "Collection"
+        assert results["totalItems"] >= 1
+        
+        # Query with mixed parameters (dict + kwargs, kwargs override)
+        results = await activity_store.query({"type": "Article"}, type="Note")
+        assert results["type"] == "Collection"
+        assert results["totalItems"] >= 1
+        
+        # Find our object in the results (confirming kwargs overrode dict)
+        found = False
+        for item in results["items"]:
+            if item["id"] == sample_object["id"]:
+                found = True
+                break
+        assert found is True
+        
+        # Query with Query object + kwargs (kwargs override)
+        results = await activity_store.query(Query(type="Article", size=5), type="Note", size=10)
         assert results["type"] == "Collection"
         assert results["totalItems"] >= 1
     

@@ -307,17 +307,13 @@ class ActivityStore:
             return cached
         
         # Fall back to backend
-        try:
-            logger.debug(f"Cache miss for {id}, fetching from backend", metadata={"object_id": id})
-            obj = await self.backend.get(id)
-            
-            # Update cache
-            await self.cache.add(id, obj)
-            
-            return obj
-        except ObjectNotFound:
-            logger.error(f"Object not found: {id}", metadata={"object_id": id})
-            raise
+        logger.debug(f"Cache miss for {id}, fetching from backend", metadata={"object_id": id})
+        obj = await self.backend.get(id)
+        
+        # Update cache
+        await self.cache.add(id, obj)
+        
+        return obj
     
     async def add_to_collection(self, ld_object: Dict[str, Any], collection: str) -> None:
         """
@@ -399,11 +395,8 @@ class ActivityStore:
         }
         
         # Add context if it exists in the original
-        if "@context" in ld_object:
-            tombstone["@context"] = ld_object["@context"]
-        else:
-            tombstone["@context"] = "https://www.w3.org/ns/activitystreams"
-        
+        tombstone["@context"] = ld_object.get("@context") or "https://www.w3.org/ns/activitystreams"
+
         # Store the tombstone
         await self.store(tombstone)
         
@@ -417,26 +410,53 @@ class ActivityStore:
         
         return tombstone
     
-    async def query(self, query: Union[Query, Dict[str, Any]]) -> Dict[str, Any]:
+    async def query(self, query: Optional[Union[Query, Dict[str, Any]]] = None, **kwargs) -> Dict[str, Any]:
         """
         Query for objects matching the specified criteria.
         
+        This method accepts query parameters in multiple ways:
+        1. As a Query object: query(Query(type="Note"))
+        2. As a dictionary: query({"type": "Note"})
+        3. As keyword arguments: query(type="Note")
+        4. As a combination of a dict/Query and kwargs: query({"type": "Note"}, size=20)
+           Note: keyword arguments override dict/Query parameters if there's a conflict
+        
         Args:
-            query: Query parameters (either a Query object or a dict)
+            query: Query parameters (either a Query object or a dict), optional
+            **kwargs: Query parameters as keyword arguments
             
         Returns:
             A collection containing the query results
         """
-        # Convert dict to Query if needed
-        if isinstance(query, dict):
-            query = Query(**query)
+        # Process the input to create a Query object
+        if query is None and not kwargs:
+            # No parameters at all, create empty query
+            final_query = Query()
+        elif isinstance(query, Query) and not kwargs:
+            # Already a Query object with no overrides
+            final_query = query
+        else:
+            # Handle dict or Query object + possible kwargs
+            params = {}
+            
+            # Start with the dict or Query's fields
+            if isinstance(query, dict):
+                params.update(query)
+            elif isinstance(query, Query):
+                params.update(query.model_dump(exclude_none=True))
+                
+            # Override with any kwargs
+            params.update(kwargs)
+            
+            # Create a new Query object
+            final_query = Query(**params)
         
         # Execute query on backend
-        results = await self.backend.query(query)
+        results = await self.backend.query(final_query)
         
         logger.info(
             "Executed query",
-            metadata={"query": query.model_dump(), "result_count": results.get("totalItems", 0)}
+            metadata={"query": final_query.model_dump(), "result_count": results.get("totalItems", 0)}
         )
         
         return results
@@ -509,6 +529,14 @@ class SyncActivityStore:
         """Convert an LD-object to a Tombstone synchronously."""
         return self._run_async(self._async_store.convert_to_tombstone(ld_object))
     
-    def query(self, query: Union[Query, Dict[str, Any]]) -> Dict[str, Any]:
-        """Query for objects matching criteria synchronously."""
-        return self._run_async(self._async_store.query(query))
+    def query(self, query: Optional[Union[Query, Dict[str, Any]]] = None, **kwargs) -> Dict[str, Any]:
+        """
+        Query for objects matching criteria synchronously.
+        
+        This method mirrors the async version and accepts parameters in multiple ways:
+        1. As a Query object: query(Query(type="Note"))
+        2. As a dictionary: query({"type": "Note"})
+        3. As keyword arguments: query(type="Note")
+        4. As a combination of a dict/Query and kwargs: query({"type": "Note"}, size=20)
+        """
+        return self._run_async(self._async_store.query(query, **kwargs))

@@ -52,7 +52,7 @@ class StorageBackend(ABC):
         Query for LD-objects matching the specified criteria.
         
         Args:
-            query: The query parameters
+            query: The query parameters as a Query object
             
         Returns:
             A collection containing the query results
