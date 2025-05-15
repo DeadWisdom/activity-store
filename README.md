@@ -36,7 +36,7 @@ pip install activity-store[es,redis]
 
 ```python
 import asyncio
-from activity_store import ActivityStore, Query
+from activity_store import ActivityStore
 
 async def main():
     # Context-managed usage
@@ -55,12 +55,12 @@ async def main():
         # Add to a collection
         await store.add_to_collection(note, "notes")
         
-        # Query for objects
-        results = await store.query(Query(
+        # Query for objects with direct keyword arguments
+        results = await store.query(
             collection="notes",
             type="Note",
             size=10
-        ))
+        )
         
         # Convert to tombstone when deleting
         tombstone = await store.convert_to_tombstone(note)
@@ -73,8 +73,7 @@ asyncio.run(main())
 
 ```python
 import asyncio
-from activity_store import ActivityStore, Query
-from activity_store.backends.elastic import ElasticsearchBackend
+from activity_store import ActivityStore
 
 async def main():
     # Create an Elasticsearch backend
@@ -103,10 +102,10 @@ async def main():
         })
         
         # Query with Elasticsearch's full-text search capabilities
-        results = await store.query(Query(
+        results = await store.query(
             text="hello world",
             sort="published:desc"
-        ))
+        )
 
 asyncio.run(main())
 ```
@@ -154,7 +153,7 @@ asyncio.run(main())
 ## Synchronous Usage
 
 ```python
-from activity_store import SyncActivityStore, Query
+from activity_store import SyncActivityStore
 
 # Context-managed usage
 with SyncActivityStore() as store:
@@ -189,24 +188,34 @@ async def main():
             })
         
         # Query by text content
-        results = await store.query(Query(text="Note 5"))
+        results = await store.query(text="Note 5")
         
         # Query by type
-        results = await store.query(Query(type="Note"))
+        results = await store.query(type="Note")
         
         # Query by keywords/tags
-        results = await store.query(Query(keywords=["tag1"]))
+        results = await store.query(keywords=["tag1"])
         
         # Query with sorting
-        results = await store.query(Query(sort="published:desc"))
+        results = await store.query(sort="published:desc")
         
         # Query with pagination
-        results = await store.query(Query(size=5))
+        results = await store.query(size=5)
         
         # Query with multiple parameters
-        results = await store.query(Query(
+        results = await store.query(
             type="Note", 
             keywords=["tag1"], 
+            sort="published:desc",
+            size=5
+        )
+        
+        # Using the Query object directly (for more complex scenarios)
+        from activity_store.query import Query
+        results = await store.query(Query(
+            collection="notes",
+            type="Note",
+            keywords=["tag1", "tag2"],
             sort="published:desc",
             size=5
         ))
