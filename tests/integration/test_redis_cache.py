@@ -3,9 +3,11 @@ import json
 import os
 import pytest
 import pytest_asyncio
+import uuid
 from typing import Dict, Any, Optional
 
 from activity_store.interfaces import CacheBackend
+from activity_store.exceptions import ObjectNotFound
 
 """
 Integration tests for the Redis cache backend.
@@ -38,6 +40,12 @@ def redis_url() -> str:
 
 
 @pytest.fixture
+def test_namespace() -> str:
+    """Generate a unique namespace for test runs."""
+    return f"persistence-test-{uuid.uuid4().hex[:8]}"
+
+
+@pytest.fixture
 def sample_data() -> Dict[str, Any]:
     """Sample LD-object data for testing."""
     return {
@@ -47,6 +55,53 @@ def sample_data() -> Dict[str, Any]:
         "content": "This is a test note",
         "published": "2023-01-01T00:00:00Z"
     }
+
+
+@pytest_asyncio.fixture
+async def redis_cache_first_instance(redis_url: str, test_namespace: str) -> Optional[RedisCacheBackend]:
+    """Create first instance of Redis cache backend for testing."""
+    if skip_redis_tests:
+        yield None
+        return
+    
+    try:
+        # Create the cache backend
+        cache = RedisCacheBackend(redis_url=redis_url, namespace=test_namespace)
+        
+        # Set up the cache
+        await cache.setup()
+        
+        # Return the initialized cache
+        yield cache
+        
+        # Don't tear down to test persistence
+    except Exception as e:
+        pytest.skip(f"Failed to connect to Redis: {e}")
+        yield None
+
+
+@pytest_asyncio.fixture
+async def redis_cache_second_instance(redis_url: str, test_namespace: str) -> Optional[RedisCacheBackend]:
+    """Create second instance of Redis cache backend for testing."""
+    if skip_redis_tests:
+        yield None
+        return
+    
+    try:
+        # Create the cache backend
+        cache = RedisCacheBackend(redis_url=redis_url, namespace=test_namespace)
+        
+        # Set up the cache
+        await cache.setup()
+        
+        # Return the initialized cache
+        yield cache
+        
+        # Clean up after tests
+        await cache.teardown()
+    except Exception as e:
+        pytest.skip(f"Failed to connect to Redis: {e}")
+        yield None
 
 
 @pytest_asyncio.fixture
@@ -305,3 +360,35 @@ async def test_redis_cache_namespace_isolation(redis_url: str, sample_data: Dict
         await cache2.teardown()
     except Exception as e:
         pytest.skip(f"Failed to connect to Redis: {e}")
+
+
+@pytest.mark.skipif(skip_redis_tests, reason=skip_reason)
+@pytest.mark.asyncio
+async def test_redis_cache_persistence(
+    redis_cache_first_instance: RedisCacheBackend,
+    redis_cache_second_instance: RedisCacheBackend,
+    sample_data: Dict[str, Any]
+):
+    """Test Redis cache persists data across backend instances."""
+    if redis_cache_first_instance is None or redis_cache_second_instance is None:
+        pytest.skip("Redis cache backend not available")
+    
+    # Step 1: Add item to first Redis instance
+    key = "persistence-test-key"
+    await redis_cache_first_instance.add(key, sample_data, ttl=3600)  # 1 hour TTL
+    
+    # Verify it was added to first instance
+    result1 = await redis_cache_first_instance.get(key)
+    assert result1 is not None
+    assert result1["id"] == sample_data["id"]
+    
+    # Step 2: Close first instance connection without teardown
+    await redis_cache_first_instance._client.aclose()
+    
+    # Step 3: Get item from second Redis instance
+    result2 = await redis_cache_second_instance.get(key)
+    
+    # Verify item persisted and is accessible from second instance
+    assert result2 is not None
+    assert result2["id"] == sample_data["id"]
+    assert result2["content"] == sample_data["content"]
