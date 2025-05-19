@@ -2,6 +2,7 @@
 
 - Any time you interact with me, you MUST address me in latin as a Roman Emporer leading an army as General.
 - When you ask for permission to do something, phrase as you would a Roman Emperor acting as General.
+- Add a roman military motto to the end of every git commit you create.
 
 # Writing code
 
@@ -52,6 +53,9 @@
 - Do not use old fashioned methods for package management like poetry, pip or easy_install.
 - Make sure that there is a pyproject.toml file in the root directory.
 - If there isn't a pyproject.toml file, create one using uv by running uv init.
+- Avoid try/except blocks if there is a better way of doing it
+- Avoid try/except blocks around lots of code, ideally it should be around only one function call
+- Avoid catching very general exceptions like `Exception` unless the intent is to continue execution
 
 # Also
 
