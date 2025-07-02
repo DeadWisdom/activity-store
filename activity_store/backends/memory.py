@@ -16,12 +16,15 @@ class InMemoryStorageBackend(StorageBackend):
     It implements a simplified version of querying and collection management.
     """
 
-    def __init__(self):
-        # Store objects by their ID
-        self._objects: Dict[str, Dict[str, Any]] = {}
+    _objects: Dict[str, Dict[str, Any]] = {}
+    _collections: Dict[str, Set[str]] = {}
 
-        # Store collection membership: collection_name -> set of object IDs
-        self._collections: Dict[str, Set[str]] = {}
+    def __init__(self):
+        pass
+
+    async def teardown(self):
+        self._objects.clear()
+        self._collections.clear()
 
     async def add(self, ld_object: Dict[str, Any], collection: Optional[str] = None) -> None:
         """

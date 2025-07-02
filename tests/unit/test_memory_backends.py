@@ -10,9 +10,11 @@ class TestInMemoryStorageBackend:
     """Test the InMemoryStorageBackend implementation."""
 
     @pytest.fixture
-    def backend(self):
+    async def backend(self):
         """Create a fresh InMemoryStorageBackend for each test."""
-        return InMemoryStorageBackend()
+        backend = InMemoryStorageBackend()
+        yield backend
+        await backend.teardown()
 
     @pytest.fixture
     def sample_objects(self):
