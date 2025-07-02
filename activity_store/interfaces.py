@@ -11,9 +11,7 @@ class StorageBackend(ABC):
     """Abstract base class for storage backends that persist LD-objects."""
 
     @abstractmethod
-    async def add(
-        self, ld_object: Dict[str, Any], collection: Optional[str] = None
-    ) -> None:
+    async def add(self, ld_object: Dict[str, Any], collection: Optional[str] = None) -> None:
         """
         Add an LD-object to the storage.
 
@@ -35,9 +33,7 @@ class StorageBackend(ABC):
         pass
 
     @abstractmethod
-    async def get(
-        self, id: str, collection: Optional[str] = None
-    ) -> Dict[str, Any] | None:
+    async def get(self, id: str, collection: Optional[str] = None) -> Dict[str, Any] | None:
         """
         Retrieve an LD-object from storage.
 
@@ -112,6 +108,10 @@ class CacheBackend(ABC):
         Args:
             key: The cache key to remove
         """
+        pass
+
+    async def close(self) -> None:
+        """Close the cache (default no-op implementation)."""
         pass
 
     async def setup(self) -> None:
