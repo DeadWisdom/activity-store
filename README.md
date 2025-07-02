@@ -48,20 +48,20 @@ async def main():
             "content": "Hello, world!",
             "published": "2023-01-01T00:00:00Z"
         })
-        
+
         # Retrieve the object
         note = await store.dereference(object_id)
-        
+
         # Add to a collection
         await store.add_to_collection(note, "notes")
-        
+
         # Query for objects with direct keyword arguments
         results = await store.query(
             collection="notes",
             type="Note",
             size=10
         )
-        
+
         # Convert to tombstone when deleting
         tombstone = await store.convert_to_tombstone(note)
 
@@ -81,7 +81,7 @@ async def main():
         es_url="http://localhost:9200",
         index_prefix="activity_store"
     )
-    
+
     # Use with a cloud service
     # backend = ElasticsearchBackend(
     #     client=AsyncElasticsearch(
@@ -90,7 +90,7 @@ async def main():
     #     ),
     #     index_prefix="activity_store"
     # )
-    
+
     # Context-managed usage with custom backend
     async with ActivityStore(backend=backend) as store:
         # Use the store as before
@@ -100,7 +100,7 @@ async def main():
             "content": "Hello, world!",
             "published": "2023-01-01T00:00:00Z"
         })
-        
+
         # Query with Elasticsearch's full-text search capabilities
         results = await store.query(
             text="hello world",
@@ -124,13 +124,13 @@ async def main():
         es_url="http://localhost:9200",
         index_prefix="activity_store"
     )
-    
+
     # Create the cache backend
     cache = RedisCacheBackend(
         redis_url="redis://localhost:6379/0",
         namespace="activity_store"
     )
-    
+
     # Create a store with both backends
     async with ActivityStore(backend=storage, cache=cache) as store:
         # Now use the store as before
@@ -140,10 +140,10 @@ async def main():
             "content": "Hello, world!",
             "published": "2023-01-01T00:00:00Z"
         })
-        
+
         # First call will fetch from Elasticsearch and cache in Redis
         note1 = await store.dereference(object_id)
-        
+
         # Second call will use the Redis cache
         note2 = await store.dereference(object_id)
 
@@ -163,7 +163,7 @@ with SyncActivityStore() as store:
         "type": "Note",
         "content": "Hello, world!"
     })
-    
+
     note = store.dereference(object_id)
     store.add_to_collection(note, "notes")
 ```
@@ -186,30 +186,30 @@ async def main():
                 "published": f"2023-01-{i+1:02d}T00:00:00Z",
                 "tag": ["test", f"tag{i % 3}"]
             })
-        
+
         # Query by text content
         results = await store.query(text="Note 5")
-        
+
         # Query by type
         results = await store.query(type="Note")
-        
+
         # Query by keywords/tags
         results = await store.query(keywords=["tag1"])
-        
+
         # Query with sorting
         results = await store.query(sort="published:desc")
-        
+
         # Query with pagination
         results = await store.query(size=5)
-        
+
         # Query with multiple parameters
         results = await store.query(
-            type="Note", 
-            keywords=["tag1"], 
+            type="Note",
+            keywords=["tag1"],
             sort="published:desc",
             size=5
         )
-        
+
         # Using the Query object directly (for more complex scenarios)
         from activity_store.query import Query
         results = await store.query(Query(
@@ -225,7 +225,7 @@ asyncio.run(main())
 
 ## Configuration
 
-The library respects the following environment variables:
+The library uses the following environment variables:
 
 - `ACTIVITY_STORE_BACKEND`: Backend type to use (default: "memory")
 - `ACTIVITY_STORE_CACHE`: Cache type to use (default: "memory")

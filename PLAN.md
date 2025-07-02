@@ -12,7 +12,7 @@ This document outlines a step-by-step set of developer prompts to be given to a 
 
 ### 2. Define Base Exceptions ✅
 
-> Define custom exceptions in `exceptions.py`: `ActivityStoreError`, `ObjectNotFound`, `InvalidLDObject`. These should inherit from appropriate Python exceptions.
+> Define custom exceptions in `exceptions.py`: `ActivityStoreError`, `InvalidLDObject`. These should inherit from appropriate Python exceptions.
 
 ### 3. Define Interfaces ✅
 

@@ -96,7 +96,6 @@ Activity Store is an async-first Python library for securely storing and retriev
 ## Exceptions
 
 - `ActivityStoreError`
-- `ObjectNotFound`
 - `InvalidLDObject`
 
 All subclass standard Python exceptions

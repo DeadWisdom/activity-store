@@ -1,5 +1,7 @@
 import pytest
 
+from . import env  # noqa
+
 from activity_store import ActivityStore
 from activity_store.backends.memory import InMemoryStorageBackend
 from activity_store.cache.memory import InMemoryCacheBackend
@@ -13,7 +15,7 @@ def sample_ld_object():
         "id": "https://example.com/objects/123",
         "type": "Note",
         "content": "This is a test note",
-        "published": "2023-01-01T00:00:00Z"
+        "published": "2023-01-01T00:00:00Z",
     }
 
 
@@ -26,7 +28,7 @@ def sample_collection_object():
         "type": "Collection",
         "name": "Notes Collection",
         "totalItems": 0,
-        "items": []
+        "items": [],
     }
 
 
@@ -46,15 +48,13 @@ def mock_cache_backend():
 async def activity_store(mock_storage_backend, mock_cache_backend):
     """
     Create and set up an ActivityStore instance for testing.
-    
+
     Yields an initialized ActivityStore and handles teardown after tests.
     """
     store = ActivityStore(
-        backend=mock_storage_backend,
-        cache=mock_cache_backend,
-        namespace="test"
+        backend=mock_storage_backend, cache=mock_cache_backend, namespace="test"
     )
-    
+
     await store.setup()
     yield store
     await store.teardown()
@@ -62,6 +62,7 @@ async def activity_store(mock_storage_backend, mock_cache_backend):
 
 # Use pytest-asyncio's built-in event_loop fixture instead of defining our own
 # This will be automatically picked up by pytest-asyncio
+
 
 # Configure pytest-asyncio to use function scope for all async fixtures by default
 def pytest_configure(config):
