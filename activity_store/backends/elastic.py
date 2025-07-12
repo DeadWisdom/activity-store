@@ -397,15 +397,13 @@ class ElasticsearchBackend(StorageBackend):
             es_query["sort"] = [{field: {"order": direction}}]
 
         # Add pagination
-        size = query_dict.get("size", 10)
+        size = query_dict.get("size", 21)  # Default size is 21
         es_query["size"] = size
 
         # Add search after if specified
         if "after" in query_dict and query_dict["after"]:
             # Handle cursor-based pagination
-            es_query["search_after"] = [query_dict["after"]]
-
-        print(es_query)
+            es_query["search_after"] = query_dict["after"]
 
         # Execute the search
         response = await self._client.search(index=index, body=es_query)
@@ -419,7 +417,7 @@ class ElasticsearchBackend(StorageBackend):
 
         # Create collection with pagination
         result = {
-            "type": "Collection",
+            "type": "OrderdCollection" if "sort" in es_query else "Collection",
             "totalItems": response["hits"]["total"]["value"],
             "items": items,
         }
@@ -429,11 +427,7 @@ class ElasticsearchBackend(StorageBackend):
             # Get the sort values from the last hit for search_after pagination
             last_hit = response["hits"]["hits"][-1]
             if "sort" in last_hit:
-                result["after"] = last_hit["sort"][0]
-
-                # Add next/prev links for link-based pagination
-                after_param = f"after={last_hit['sort'][0]}"
-                result["next"] = f"?{after_param}&size={size}"
+                result["next"] = last_hit['sort']
 
         logger.info(
             "Executed query",
@@ -443,4 +437,5 @@ class ElasticsearchBackend(StorageBackend):
                 "collection": query_dict.get("collection"),
             },
         )
+
         return result

@@ -34,7 +34,7 @@ class Query(BaseModel):
         description="Maximum number of results to return"
     )
     
-    after: Optional[str] = Field(
+    after: Optional[Any] = Field(
         default=None,
         description="Pagination token for results after this point"
     )

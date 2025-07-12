@@ -268,24 +268,17 @@ async def test_es_query_pagination(
 
     # First page
     query = Query(size=3, sort="published:asc")  # Add sort to ensure consistent order
-    results = await es_backend.query(query)
+    first = await es_backend.query(query)
 
     # Verify pagination
-    assert results["type"] == "Collection"
-    assert len(results["items"]) == 3
+    assert first["type"] == "OrderdCollection"
+    assert [x['published'] for x in first["items"]] == [x['published'] for x in sample_objects[:3]]
 
-    # Continue with next page query without needing first page reference
-
-    # Query with size limit, using from parameter
-    from_query = Query(size=3)
-    next_results = await es_backend.query(from_query)
-
-    # Verify next page
-    assert next_results["type"] == "Collection"
-    assert len(next_results["items"]) > 0
-
-    # Check that we got results, even if pagination metadata is missing
-    assert len(next_results["items"]) > 0
+    # Second page query
+    query = Query(size=3, sort="published:asc", after=first["next"])
+    second = await es_backend.query(query)
+    assert second["type"] == "OrderdCollection"
+    assert [x['published'] for x in second["items"]] == [x['published'] for x in sample_objects[3:6]]
 
 
 @pytest.mark.slow_integration_test
