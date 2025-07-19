@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from pydantic import BaseModel, Field, field_validator
 
+type Json = dict[str, Json] | list[Json] | str | int | float | bool | None 
 
 class Query(BaseModel):
     """
@@ -34,7 +35,7 @@ class Query(BaseModel):
         description="Maximum number of results to return"
     )
     
-    after: Optional[Any] = Field(
+    after: Json = Field(
         default=None,
         description="Pagination token for results after this point"
     )
